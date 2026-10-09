@@ -9,7 +9,8 @@ import {
   Target, 
   Music, 
   Activity,
-  Award
+  Award,
+  X
 } from 'lucide-react';
 import { TypingResult } from '../types';
 
@@ -98,15 +99,15 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl relative overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto">
         
         {/* Glow ambient background */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Header with Personal Best Tag */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+        {/* Sticky Header with Personal Best Tag & Close button */}
+        <div className="flex items-center justify-between px-5 sm:px-7 pt-5 pb-3 border-b border-slate-800/80 bg-slate-900/95 backdrop-blur-sm z-10 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             {isPersonalBest ? (
               <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-full">
                 <Trophy className="w-3.5 h-3.5" />
@@ -117,7 +118,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
                 Session Completed
               </span>
             )}
-            <span className="text-slate-600" aria-hidden="true">·</span>
+            <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
             <span className="text-xs text-slate-400 capitalize font-mono">
               {result.mode} mode ({result.modeParam})
             </span>
@@ -125,36 +126,39 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 p-1 text-xs rounded hover:bg-slate-800 transition-colors cursor-pointer"
-            aria-label="Close"
+            className="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition-colors cursor-pointer shrink-0 ml-2"
+            aria-label="Close results dashboard"
+            title="Close results (Esc)"
           >
-            <span className="font-mono text-sm leading-none">&times;</span>
+            <X className="w-4 h-4 text-slate-300 hover:text-white" />
           </button>
         </div>
 
-        {/* Primary Score Numbers */}
-        <div className="grid grid-cols-2 gap-4 my-4">
-          <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4">
-            <span className="text-xs text-slate-400 font-medium">Net Word Measurement</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-5xl font-extrabold text-amber-400 font-mono tracking-tight tabular-nums">
-                {result.wpm}
-              </span>
-              <span className="text-sm font-semibold text-slate-400">WPM</span>
+        {/* Scrollable Content Body */}
+        <div className="overflow-y-auto px-5 sm:px-7 py-4 space-y-4 flex-1 overscroll-contain">
+          {/* Primary Score Numbers */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4">
+              <span className="text-xs text-slate-400 font-medium">Net Word Measurement</span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-4xl sm:text-5xl font-extrabold text-amber-400 font-mono tracking-tight tabular-nums">
+                  {result.wpm}
+                </span>
+                <span className="text-sm font-semibold text-slate-400">WPM</span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">Official 5-stroke word standard</p>
             </div>
-            <p className="text-xs text-slate-400 mt-1">Official 5-stroke word standard</p>
-          </div>
 
-          <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4">
-            <span className="text-xs text-slate-400 font-medium">Accuracy</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-5xl font-extrabold text-emerald-400 font-mono tracking-tight tabular-nums">
-                {result.accuracy}%
-              </span>
+            <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4">
+              <span className="text-xs text-slate-400 font-medium">Accuracy</span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-4xl sm:text-5xl font-extrabold text-emerald-400 font-mono tracking-tight tabular-nums">
+                  {result.accuracy}%
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">{result.correctChars} correct keystrokes</p>
             </div>
-            <p className="text-xs text-slate-400 mt-1">{result.correctChars} correct keystrokes</p>
           </div>
-        </div>
 
         {/* Official 40, 50, 60 WPM Benchmarks Certification */}
         <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 my-3">
@@ -283,43 +287,52 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
 
         {/* Soundtrack Attribution */}
         {result.songListened && (
-          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/40 border border-slate-800/60 rounded-lg p-2.5 mb-5">
+          <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-950/40 border border-slate-800/60 rounded-lg p-2.5">
             <Music className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span className="text-slate-400">Song Groove:</span>
             <span className="text-slate-200 font-medium truncate">{result.songListened}</span>
           </div>
         )}
+        </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between gap-3 pt-2">
+        {/* Sticky Footer Actions - Always visible on any screen size */}
+        <div className="flex items-center justify-between gap-3 px-5 sm:px-7 py-4 border-t border-slate-800/80 bg-slate-900/95 backdrop-blur-sm z-10 shrink-0">
           <button
             onClick={handleShare}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
           >
             {copied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Copied Score!</span>
+                <span>Copied!</span>
               </>
             ) : (
               <>
                 <Share2 className="w-3.5 h-3.5" />
-                <span>Share Score</span>
+                <span>Share</span>
               </>
             )}
           </button>
 
-          <button
-            onClick={onRestart}
-            className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-lg shadow-amber-400/20 hover:scale-102 active:scale-98 transition-all cursor-pointer"
-            title="Start fresh practice race without song interruption"
-          >
-            <RotateCcw className="w-4 h-4 text-slate-950" />
-            <span>Fresh Practice Race</span>
-            <span className="text-[10px] text-slate-900/80 font-mono bg-amber-300/60 px-1.5 py-0.5 rounded">
-              Tab / Enter
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-3.5 py-2.5 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-xl border border-slate-800 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+            <button
+              onClick={onRestart}
+              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-lg shadow-amber-400/20 hover:scale-102 active:scale-98 transition-all cursor-pointer"
+              title="Start fresh practice race without song interruption"
+            >
+              <RotateCcw className="w-4 h-4 text-slate-950" />
+              <span>Practice Again</span>
+              <span className="hidden sm:inline text-[10px] text-slate-900/80 font-mono bg-amber-300/60 px-1.5 py-0.5 rounded">
+                Tab / Enter
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

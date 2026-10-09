@@ -37,13 +37,27 @@ const DEFAULT_SETTINGS: TypingSettings = {
   targetWpmGoal: 50,
 };
 
+// Function to select a random different track on page load / refresh
+function pickInitialTrack(): SongTrack {
+  try {
+    const lastPlayedId = localStorage.getItem('surtype_last_played_id');
+    const available = CURATED_TRACKS.filter(t => t.id !== lastPlayedId);
+    const pool = available.length > 0 ? available : CURATED_TRACKS;
+    const randomTrack = pool[Math.floor(Math.random() * pool.length)];
+    localStorage.setItem('surtype_last_played_id', randomTrack.id);
+    return randomTrack;
+  } catch {
+    return CURATED_TRACKS[Math.floor(Math.random() * CURATED_TRACKS.length)];
+  }
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'practice' | 'music' | 'history' | 'settings'>('practice');
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [practiceKey, setPracticeKey] = useState<number>(0);
 
-  // Music state - starts on "Jhol" by Maanu x Annural Khalid (Coke Studio)
-  const [currentTrack, setCurrentTrack] = useState<SongTrack>(CURATED_TRACKS[0]);
+  // Music state - selects a fresh different song on every page refresh!
+  const [currentTrack, setCurrentTrack] = useState<SongTrack>(() => pickInitialTrack());
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<InstantSwitchCategory>('all');

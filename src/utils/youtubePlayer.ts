@@ -41,6 +41,7 @@ export function switchYouTubeVideo(videoId: string): void {
   if (iframe) {
     // 1. Try native API switch (instant, smooth, no iframe reload)
     sendYouTubeCommand('loadVideoById', [videoId]);
+    sendYouTubeCommand('playVideo');
 
     // 2. Also ensure iframe src is pointing to the new video with autoplay
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -86,24 +87,43 @@ export function initYouTubeListenerHandshake(): void {
 
 /**
  * Listen for YouTube iframe player status changes (e.g. video ended)
- * YouTube player state: 0 is ENDED
+ * YouTube player state: 0 is ENDED, 1 is PLAYING, 2 is PAUSED
  */
 export function setupYouTubeStateListener(onVideoEnded: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
 
-  // Request listening handshake
+  // Request listening handshake initially and periodically until connected
   initYouTubeListenerHandshake();
+  const handshakeInterval = setInterval(() => {
+    initYouTubeListenerHandshake();
+  }, 3000);
+
+  let lastTriggerTime = 0;
+  const triggerEndedSafely = () => {
+    const now = Date.now();
+    // Throttle to prevent duplicate rapid triggers
+    if (now - lastTriggerTime > 1500) {
+      lastTriggerTime = now;
+      onVideoEnded();
+    }
+  };
 
   const handleMessage = (event: MessageEvent) => {
     try {
-      if (typeof event.data !== 'string') return;
-      const data = JSON.parse(event.data);
-      // YouTube IFrame postMessage events:
-      // data.event === "onStateChange" or infoDelivery with playerState === 0
-      if (data.event === 'onStateChange' && (data.info === 0 || data.info?.playerState === 0)) {
-        onVideoEnded();
-      } else if (data.info && data.info.playerState === 0) {
-        onVideoEnded();
+      if (!event.data) return;
+      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (!data) return;
+
+      // 1. YouTube IFrame API onStateChange event:
+      // info === 0 or info.playerState === 0 represents YT.PlayerState.ENDED
+      if (data.event === 'onStateChange') {
+        if (data.info === 0 || data.info?.playerState === 0) {
+          triggerEndedSafely();
+        }
+      } 
+      // 2. Info delivery format used by YouTube embeds
+      else if (data.info && data.info.playerState === 0) {
+        triggerEndedSafely();
       }
     } catch {
       // Non-JSON or third party postMessage
@@ -112,6 +132,7 @@ export function setupYouTubeStateListener(onVideoEnded: () => void): () => void 
 
   window.addEventListener('message', handleMessage);
   return () => {
+    clearInterval(handshakeInterval);
     window.removeEventListener('message', handleMessage);
   };
 }
