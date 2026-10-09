@@ -6,7 +6,6 @@ import {
   SkipBack, 
   Shuffle, 
   Radio, 
-  ExternalLink,
   Tv,
   Headphones,
   Music,
@@ -195,30 +194,18 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
 
       {/* Now Playing Title & Artist */}
       <div className="p-3 bg-slate-950/80 border border-slate-800/90 rounded-xl mb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-amber-400 font-semibold tracking-wide uppercase">
-                {currentTrack.tag || (currentTrack.language ? `${currentTrack.language.toUpperCase()} Track` : 'Now Playing')}
-              </span>
-            </div>
-            <h4 className="text-xs sm:text-sm font-semibold text-slate-100 truncate mt-0.5" title={currentTrack.title}>
-              {currentTrack.title}
-            </h4>
-            <p className="text-[11px] text-slate-400 truncate mt-0.5">
-              {currentTrack.artist}
-            </p>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-amber-400 font-semibold tracking-wide uppercase">
+              {currentTrack.tag || (currentTrack.language ? `${currentTrack.language.toUpperCase()} Track` : 'Now Playing')}
+            </span>
           </div>
-
-          <a
-            href={`https://www.youtube.com/watch?v=${currentTrack.youtubeId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-500 hover:text-slate-300 p-1"
-            title="Open on YouTube"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <h4 className="text-xs sm:text-sm font-semibold text-slate-100 truncate mt-0.5" title={currentTrack.title}>
+            {currentTrack.title}
+          </h4>
+          <p className="text-[11px] text-slate-400 truncate mt-0.5">
+            {currentTrack.artist}
+          </p>
         </div>
       </div>
 

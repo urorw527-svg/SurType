@@ -7,11 +7,10 @@ import {
   Tv, 
   Headphones, 
   Search, 
-  ExternalLink, 
   Music, 
   Loader2, 
-  Globe,
-  Disc3,
+  Globe, 
+  Disc3, 
   Shuffle, 
   Radio, 
   RefreshCw, 
@@ -26,7 +25,7 @@ import {
 import { SongTrack, YouTubeSearchResult, InstantSwitchCategory } from '../types';
 import { CURATED_TRACKS, extractYouTubeId } from '../data/musicTracks';
 import { seekYouTubeVideo } from '../utils/youtubePlayer';
-import { searchTracks, getDirectYouTubeSearchUrl } from '../utils/musicSearch';
+import { searchTracks } from '../utils/musicSearch';
 
 interface YouTubeMusicLoungeProps {
   currentTrack: SongTrack;
@@ -458,17 +457,6 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
               <Tv className="w-3.5 h-3.5" />
               <span>Watch Video</span>
             </button>
-
-            <a
-              href={`https://www.youtube.com/watch?v=${currentTrack.youtubeId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open on YouTube"
-              className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors border border-slate-800"
-              title="Open video on YouTube.com"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
           </div>
         </div>
 
@@ -598,19 +586,11 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
               </p>
             </div>
 
-            {/* Direct YouTube status pill */}
+            {/* Catalog Info */}
             <div className="flex items-center gap-2">
-              <a 
-                href={getDirectYouTubeSearchUrl(searchQuery || 'trending music')} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-600/15 border border-red-500/30 text-red-300 hover:text-red-200 hover:bg-red-600/25 text-xs font-semibold transition-colors"
-                title="Search directly on YouTube.com"
-              >
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span>Direct YouTube Search</span>
-                <ExternalLink className="w-3 h-3 ml-0.5" />
-              </a>
+              <span className="text-[11px] text-slate-400">
+                Type song title, artist, or paste a video link / ID
+              </span>
             </div>
           </div>
 
@@ -639,7 +619,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
               )}
             </div>
 
-            {/* BIG Search & Action Buttons */}
+            {/* Action Buttons */}
             <div className="flex items-center gap-2 shrink-0">
               {/* If user typed or pasted a YouTube URL or 11-char ID, show prominent Direct Play button */}
               {detectedDirectId ? (
@@ -649,7 +629,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                   title="Play this video link immediately"
                 >
                   <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-slate-950" />
-                  <span>Direct Play Now</span>
+                  <span>Play Link</span>
                 </button>
               ) : (
                 <button
@@ -665,24 +645,11 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                   ) : (
                     <>
                       <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span>Search YouTube</span>
+                      <span>Search Songs</span>
                     </>
                   )}
                 </button>
               )}
-
-              {/* BIG Direct YouTube Search Button */}
-              <a
-                href={getDirectYouTubeSearchUrl(searchQuery || 'trending songs')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 sm:px-5 py-3.5 sm:py-4 bg-red-600/20 hover:bg-red-600/35 text-red-200 border border-red-500/40 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:scale-[1.02] active:scale-95 shrink-0"
-                title="Directly search on YouTube website in a new tab"
-              >
-                <ExternalLink className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-red-400" />
-                <span className="hidden xs:inline sm:inline">Direct YouTube ↗</span>
-                <span className="xs:hidden sm:hidden">YouTube ↗</span>
-              </a>
             </div>
           </form>
 
@@ -756,19 +723,6 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            {activeSearchTerm && (
-              <a
-                href={getDirectYouTubeSearchUrl(activeSearchTerm)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors"
-                title="Search this query on YouTube.com"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Direct Search on YouTube ↗</span>
-              </a>
-            )}
-
             <button
               onClick={loadRandomFeed}
               disabled={isSearching}
@@ -788,7 +742,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
             <p className="text-xs text-slate-500">Querying live feeds and matching catalog tracks</p>
           </div>
         ) : searchResults.length === 0 ? (
-          /* High-Quality Zero Results Panel with Direct YouTube button */
+          /* High-Quality Zero Results Panel */
           <div className="py-12 px-4 text-center bg-slate-900/50 rounded-2xl border border-slate-800 flex flex-col items-center max-w-xl mx-auto shadow-xl">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-3">
               <Search className="w-6 h-6" />
@@ -797,23 +751,13 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
               No matching tracks found for "{activeSearchTerm || searchQuery}"
             </h4>
             <p className="text-xs text-slate-400 mt-1.5 max-w-md">
-              Don't worry! You can search YouTube directly to play any video, or paste any YouTube link or 11-character video ID.
+              Try searching with another keyword or artist name, or paste any YouTube video link or video ID directly.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 mt-5 w-full justify-center">
-              <a
-                href={getDirectYouTubeSearchUrl(activeSearchTerm || searchQuery || 'music')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-red-600/25 transition-all"
-              >
-                <ExternalLink className="w-4 h-4" />
-                <span>Search "{activeSearchTerm || searchQuery}" on YouTube.com ↗</span>
-              </a>
-
+            <div className="flex items-center gap-3 mt-5 w-full justify-center">
               <button
                 onClick={handleResetFeed}
-                className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-xl transition-colors cursor-pointer shadow-md"
               >
                 Back to All Songs Feed
               </button>
@@ -903,16 +847,6 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                       <Tv className="w-3.5 h-3.5" />
                       <span>{isCurrent && isPlaying && showVideo ? 'Playing Video' : 'Play Video'}</span>
                     </button>
-
-                    <a
-                      href={`https://www.youtube.com/watch?v=${item.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-xl transition-colors border border-slate-800"
-                      title="Open on YouTube.com"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
                   </div>
                 </div>
               );
