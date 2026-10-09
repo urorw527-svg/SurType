@@ -314,14 +314,13 @@ async function searchYouTubeFeed(query: string): Promise<SearchResultItem[]> {
   }
 
   // Fallback search through curated list matching query terms
-  const qLower = query.toLowerCase();
-  const filtered = ALL_CURATED_FEED.filter(t => 
-    t.title.toLowerCase().includes(qLower) || 
-    t.channel.toLowerCase().includes(qLower) ||
-    (t.category && t.category.includes(qLower))
-  );
+  const qTokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const filtered = ALL_CURATED_FEED.filter(t => {
+    const text = `${t.title} ${t.channel} ${t.category || ''}`.toLowerCase();
+    return qTokens.some(token => text.includes(token));
+  });
 
-  return filtered.length > 0 ? shuffleArray(filtered) : shuffleArray(ALL_CURATED_FEED).slice(0, 10);
+  return filtered;
 }
 
 async function startServer() {
@@ -353,10 +352,10 @@ async function startServer() {
       }
 
       const results = await searchYouTubeFeed(q.trim());
-      return res.json({ results });
+      return res.json({ results, query: q.trim() });
     } catch (err: any) {
       console.error('Search error:', err);
-      return res.json({ results: shuffleArray(ALL_CURATED_FEED) });
+      return res.json({ results: [], query: q?.trim() || '', error: 'Live search failed' });
     }
   });
 
