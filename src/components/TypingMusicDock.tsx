@@ -14,7 +14,9 @@ import {
   Volume2,
   Volume1,
   VolumeX,
-  Sliders
+  Sliders,
+  Globe,
+  Disc3
 } from 'lucide-react';
 import { SongTrack, InstantSwitchCategory } from '../types';
 import { seekYouTubeVideo } from '../utils/youtubePlayer';
@@ -300,8 +302,8 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
             }`}
             title="Play hits across all categories"
           >
-            <span>🎶</span>
-            <span>All Songs</span>
+            <Disc3 className="w-3.5 h-3.5 text-amber-400" />
+            <span>All Tracks</span>
             {selectedCategory === 'all' && (
               <span className="text-[10px] bg-amber-400/20 text-amber-300 px-1.5 py-0.2 rounded font-mono ml-auto">
                 Selected
@@ -319,7 +321,7 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
             }`}
             title="Switch to Hindi Hits (Jhol, Pal Pal, etc.)"
           >
-            <span>🇮🇳</span>
+            <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400">HI</span>
             <span>Hindi</span>
           </button>
 
@@ -333,7 +335,7 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
             }`}
             title="Switch to Bangla Hits (Deora, Shada Shada Kala Kala, etc.)"
           >
-            <span>🇧🇩</span>
+            <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400">BN</span>
             <span>Bangla</span>
           </button>
 
@@ -347,7 +349,7 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
             }`}
             title="Switch to English Hits (Lofi Girl, Golden Hour, etc.)"
           >
-            <span>🌐</span>
+            <Globe className="w-3.5 h-3.5 text-slate-400" />
             <span>English</span>
           </button>
 

@@ -63,7 +63,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
   const tier = getSpeedTier(result.wpm);
 
   const handleShare = () => {
-    const text = `🎵 Practiced typing on SurType while listening to ${result.songListened || 'Hindi Lo-Fi'}!\n⚡ Speed: ${result.wpm} WPM (Net)\n🎯 Accuracy: ${result.accuracy}%\n⌨️ Mode: ${result.mode} (${result.modeParam})`;
+    const text = `SurType Practice Result\nSpeed: ${result.wpm} WPM (Net)\nAccuracy: ${result.accuracy}%\nMode: ${result.mode} (${result.modeParam})${result.songListened ? `\nAudio Track: ${result.songListened}` : ""}`; 
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
@@ -125,9 +125,10 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-200 p-1 text-sm rounded cursor-pointer"
+            className="text-slate-400 hover:text-slate-200 p-1 text-xs rounded hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Close"
           >
-            ✕
+            <span className="font-mono text-sm leading-none">&times;</span>
           </button>
         </div>
 
@@ -166,7 +167,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
                 ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 font-semibold' 
                 : 'bg-slate-900/60 border-slate-800 text-slate-500'
             }`}>
-              <span className="block font-mono text-sm">{result.wpm >= 40 ? '✓' : '—'} 40 WPM</span>
+              <span className="block font-mono text-sm">40 WPM</span>
               <span className="text-[10px] text-slate-400 block mt-0.5">Average Speed</span>
             </div>
 
@@ -175,7 +176,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
                 ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 font-semibold' 
                 : 'bg-slate-900/60 border-slate-800 text-slate-500'
             }`}>
-              <span className="block font-mono text-sm">{result.wpm >= 50 ? '✓' : '—'} 50 WPM</span>
+              <span className="block font-mono text-sm">50 WPM</span>
               <span className="text-[10px] text-slate-400 block mt-0.5">Fluent Speed</span>
             </div>
 
@@ -184,7 +185,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
                 ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 font-bold' 
                 : 'bg-slate-900/60 border-slate-800 text-slate-500'
             }`}>
-              <span className="block font-mono text-sm">{result.wpm >= 60 ? '★' : '—'} 60 WPM</span>
+              <span className="block font-mono text-sm">60 WPM</span>
               <span className="text-[10px] text-slate-400 block mt-0.5">Pro Speed</span>
             </div>
           </div>

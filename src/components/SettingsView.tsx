@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Volume2, 
-  Sparkles, 
   Keyboard, 
   HelpCircle, 
   Headphones, 

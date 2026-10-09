@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 interface TopBarProps {
   activeTab: 'practice' | 'music' | 'history' | 'settings';

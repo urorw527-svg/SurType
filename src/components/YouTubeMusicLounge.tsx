@@ -10,7 +10,8 @@ import {
   ExternalLink, 
   Music, 
   Loader2, 
-  Sparkles, 
+  Globe,
+  Disc3,
   Shuffle, 
   Radio, 
   RefreshCw, 
@@ -61,14 +62,14 @@ const RANDOM_QUERY_TOPICS = [
 ];
 
 const TRENDING_SEARCH_TAGS = [
-  { label: '🔥 Jhol · Coke Studio', query: 'Jhol Maanu Coke Studio' },
-  { label: '✨ Pal Pal Dil Ke Paas', query: 'Pal Pal Dil Ke Paas' },
-  { label: '🇧🇩 Deora · CS Bangla', query: 'Deora Coke Studio Bangla' },
-  { label: '🎵 Husn · Anuv Jain', query: 'Husn Anuv Jain' },
-  { label: '🎧 Lofi Girl Beats', query: 'Lofi Girl Chillhop' },
-  { label: '🌟 Sunflower', query: 'Sunflower Post Malone' },
-  { label: '⚡ Kesariya', query: 'Kesariya Arijit Singh' },
-  { label: '🎼 Pasoori', query: 'Pasoori Coke Studio' },
+  { label: 'Jhol · Coke Studio', query: 'Jhol Maanu Coke Studio' },
+  { label: 'Pal Pal Dil Ke Paas', query: 'Pal Pal Dil Ke Paas' },
+  { label: 'Deora · Coke Studio Bangla', query: 'Deora Coke Studio Bangla' },
+  { label: 'Husn · Anuv Jain', query: 'Husn Anuv Jain' },
+  { label: 'Lofi Girl Chillhop', query: 'Lofi Girl Chillhop' },
+  { label: 'Sunflower · Post Malone', query: 'Sunflower Post Malone' },
+  { label: 'Kesariya · Arijit Singh', query: 'Kesariya Arijit Singh' },
+  { label: 'Pasoori · Coke Studio', query: 'Pasoori Coke Studio' },
 ];
 
 export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
@@ -475,7 +476,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
         {showVideo && (
           <div className="mt-4 pt-4 border-t border-slate-800 text-center">
             <p className="text-xs text-amber-300/90 font-medium">
-              📺 Video Mode Active — Video is currently streaming in sync with the audio player above.
+              Video Mode Active — Video is currently streaming in sync with the audio player above.
             </p>
           </div>
         )}
@@ -486,8 +487,8 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
           <div>
             <h3 className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Play By Language & Instant Switch</span>
+              <Radio className="w-4 h-4 text-amber-400" />
+              <span>Filter By Language</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
               Click any button to immediately play a song and load its YouTube feed:
@@ -505,7 +506,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                 : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-200'
             }`}
           >
-            <span className="text-xl">🎶</span>
+            <Disc3 className="w-5 h-5 text-amber-400 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold">All Hits</div>
               <div className="text-[10px] text-slate-400 truncate">All songs & languages</div>
@@ -521,7 +522,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                 : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-200'
             }`}
           >
-            <span className="text-xl">🇮🇳</span>
+            <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">HI</span>
             <div className="min-w-0">
               <div className="text-xs font-bold">Hindi Songs</div>
               <div className="text-[10px] text-slate-400 truncate">Jhol, Pal Pal, Husn</div>
@@ -537,7 +538,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                 : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-200'
             }`}
           >
-            <span className="text-xl">🇧🇩</span>
+            <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">BN</span>
             <div className="min-w-0">
               <div className="text-xs font-bold">Bangla Songs</div>
               <div className="text-[10px] text-slate-400 truncate">Deora, Shada Shada</div>
@@ -553,7 +554,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                 : 'bg-slate-950/80 hover:bg-slate-800 border-slate-800 text-slate-200'
             }`}
           >
-            <span className="text-xl">🌐</span>
+            <Globe className="w-5 h-5 text-slate-400 shrink-0" />
             <div className="min-w-0">
               <div className="text-xs font-bold">English Lo-Fi</div>
               <div className="text-[10px] text-slate-400 truncate">Lofi Girl, JVKE</div>

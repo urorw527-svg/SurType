@@ -534,7 +534,7 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
                   : 'text-slate-400 bg-slate-950 border border-slate-800'
               }`}>
-                40 WPM {is40Passed ? '✓' : ''}
+                40 WPM
               </span>
               <span className="text-[9px] text-slate-500 font-sans mt-0.5">Average</span>
             </div>
@@ -551,7 +551,7 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
                   : 'text-slate-400 bg-slate-950 border border-slate-800'
               }`}>
-                50 WPM {is50Passed ? '✓' : ''}
+                50 WPM
               </span>
               <span className="text-[9px] text-slate-500 font-sans mt-0.5">Fluent</span>
             </div>
@@ -568,7 +568,7 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
                   ? 'bg-amber-400 text-slate-950 font-bold shadow' 
                   : 'text-slate-400 bg-slate-950 border border-slate-800'
               }`}>
-                60 WPM {is60Passed ? '★' : ''}
+                60 WPM
               </span>
               <span className="text-[9px] text-slate-500 font-sans mt-0.5">Pro Speed</span>
             </div>
