@@ -13,6 +13,7 @@ import { TypingEngine } from './components/TypingEngine';
 import { TestResultsModal } from './components/TestResultsModal';
 import { HistoryStats } from './components/HistoryStats';
 import { SettingsView } from './components/SettingsView';
+import { LoginPage } from './components/LoginPage';
 import { SongTrack, TypingResult, TypingSettings, InstantSwitchCategory } from './types';
 import { CURATED_TRACKS } from './data/musicTracks';
 import { 
@@ -52,7 +53,7 @@ function pickInitialTrack(): SongTrack {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'practice' | 'music' | 'history' | 'settings'>('practice');
+  const [activeTab, setActiveTab] = useState<'practice' | 'music' | 'history' | 'settings' | 'login'>('practice');
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [practiceKey, setPracticeKey] = useState<number>(0);
 
@@ -440,6 +441,11 @@ export default function App() {
             onUpdateSettings={handleUpdateSettings}
             onSelectPractice={() => setActiveTab('practice')}
           />
+        )}
+
+        {/* Login Page View */}
+        {activeTab === 'login' && (
+          <LoginPage onReturnToPractice={() => setActiveTab('practice')} />
         )}
       </main>
 

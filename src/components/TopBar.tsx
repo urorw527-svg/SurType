@@ -2,8 +2,8 @@ import React from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 
 interface TopBarProps {
-  activeTab: 'practice' | 'music' | 'history' | 'settings';
-  onTabChange: (tab: 'practice' | 'music' | 'history' | 'settings') => void;
+  activeTab: 'practice' | 'music' | 'history' | 'settings' | 'login';
+  onTabChange: (tab: 'practice' | 'music' | 'history' | 'settings' | 'login') => void;
   focusMode: boolean;
   onToggleFocusMode: () => void;
   personalBestWpm: number;
@@ -28,7 +28,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         SurType
       </a>
 
-      {/* Zone 2: 4 clean text navigation links */}
+      {/* Zone 2: Navigation links */}
       <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
         <button
           onClick={() => onTabChange('practice')}
@@ -61,6 +61,14 @@ export const TopBar: React.FC<TopBarProps> = ({
           }`}
         >
           Settings
+        </button>
+        <button
+          onClick={() => onTabChange('login')}
+          className={`hover:text-slate-100 transition-colors cursor-pointer flex items-center gap-1.5 ${
+            activeTab === 'login' ? 'text-amber-400 font-semibold' : ''
+          }`}
+        >
+          <span>Login</span>
         </button>
       </nav>
 
