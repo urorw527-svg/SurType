@@ -13,7 +13,8 @@ import { TypingEngine } from './components/TypingEngine';
 import { TestResultsModal } from './components/TestResultsModal';
 import { HistoryStats } from './components/HistoryStats';
 import { SettingsView } from './components/SettingsView';
-import { LoginPage } from './components/LoginPage';
+import { AuthModal } from './components/AuthModal';
+import { supabase } from './lib/supabaseClient';
 import { SongTrack, TypingResult, TypingSettings, InstantSwitchCategory } from './types';
 import { CURATED_TRACKS } from './data/musicTracks';
 import { 
@@ -23,6 +24,17 @@ import {
   setupYouTubeStateListener,
   setYouTubeVolume 
 } from './utils/youtubePlayer';
+
+interface AuthUser {
+  id: string;
+  isAnonymous?: boolean;
+  email?: string;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    name?: string;
+  };
+}
 
 const DEFAULT_SETTINGS: TypingSettings = {
   soundTheme: 'creamy',
@@ -53,9 +65,88 @@ function pickInitialTrack(): SongTrack {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'practice' | 'music' | 'history' | 'settings' | 'login'>('practice');
+  const [activeTab, setActiveTab] = useState<'practice' | 'music' | 'history' | 'settings'>('practice');
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [practiceKey, setPracticeKey] = useState<number>(0);
+
+  // Authentication State with Supabase
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const savedGuest = localStorage.getItem('surtype_guest_user');
+      return savedGuest ? JSON.parse(savedGuest) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isFirstVisit, setIsFirstVisit] = useState<boolean>(false);
+
+  // Check Supabase session & handle first visit login requirement
+  useEffect(() => {
+    async function initAuth() {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          setUser({
+            id: data.session.user.id,
+            isAnonymous: data.session.user.is_anonymous,
+            email: data.session.user.email,
+            user_metadata: data.session.user.user_metadata,
+          });
+        } else {
+          // If no session & never visited before, prompt to login with Guest or Google
+          const hasVisitedBefore = localStorage.getItem('surtype_has_visited');
+          const savedGuest = localStorage.getItem('surtype_guest_user');
+          if (!hasVisitedBefore && !savedGuest) {
+            setIsFirstVisit(true);
+            setIsAuthModalOpen(true);
+            localStorage.setItem('surtype_has_visited', 'true');
+          }
+        }
+      } catch (err) {
+        console.warn('Auth session check notice:', err);
+      }
+    }
+
+    initAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          isAnonymous: session.user.is_anonymous,
+          email: session.user.email,
+          user_metadata: session.user.user_metadata,
+        });
+      } else {
+        const savedGuest = localStorage.getItem('surtype_guest_user');
+        if (savedGuest) {
+          try {
+            setUser(JSON.parse(savedGuest));
+          } catch {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Sign out:', e);
+    }
+    localStorage.removeItem('surtype_guest_user');
+    setUser(null);
+    setIsAuthModalOpen(false);
+  };
 
   // Music state - selects a fresh different song on every page refresh!
   const [currentTrack, setCurrentTrack] = useState<SongTrack>(() => pickInitialTrack());
@@ -328,6 +419,11 @@ export default function App() {
           focusMode={focusMode}
           onToggleFocusMode={() => setFocusMode(prev => !prev)}
           personalBestWpm={personalBestWpm}
+          user={user}
+          onOpenAuthModal={() => {
+            setIsFirstVisit(false);
+            setIsAuthModalOpen(true);
+          }}
         />
       )}
 
@@ -442,12 +538,20 @@ export default function App() {
             onSelectPractice={() => setActiveTab('practice')}
           />
         )}
-
-        {/* Login Page View */}
-        {activeTab === 'login' && (
-          <LoginPage onReturnToPractice={() => setActiveTab('practice')} />
-        )}
       </main>
+
+      {/* Account / Log In Modal (First visit popup or triggered via top bar) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        user={user}
+        onAuthSuccess={(authUser) => {
+          setUser(authUser);
+          setIsAuthModalOpen(false);
+        }}
+        onSignOut={handleSignOut}
+        isFirstVisitPrompt={isFirstVisit}
+      />
 
       {/* Completion Modal */}
       {activeResult && (
