@@ -36,18 +36,46 @@ export function pauseYouTubeVideo(): void {
   sendYouTubeCommand('pauseVideo');
 }
 
-export function switchYouTubeVideo(videoId: string): void {
+export function parseDurationToSeconds(durationStr?: string): number {
+  if (!durationStr || durationStr.toLowerCase().includes('live')) return 210;
+  const parts = durationStr.split(':').map(Number);
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return parts[0] * 60 + parts[1];
+  }
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  return 210;
+}
+
+export function formatSecondsToTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds));
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+export function switchYouTubeVideo(videoId: string, volume?: number): void {
   const iframe = getPlayerIframe();
   if (iframe) {
     // 1. Try native API switch (instant, smooth, no iframe reload)
-    sendYouTubeCommand('loadVideoById', [videoId]);
+    sendYouTubeCommand('loadVideoById', [{ videoId, startSeconds: 0 }]);
     sendYouTubeCommand('playVideo');
 
-    // 2. Also ensure iframe src is pointing to the new video with autoplay
+    // 2. Also ensure iframe src is pointing to the new video with autoplay if needed
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const newSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
     if (!iframe.src.includes(videoId)) {
       iframe.src = newSrc;
+    }
+
+    // 3. Re-enforce user's volume across song switches at staggered intervals
+    if (typeof volume === 'number') {
+      const applyVol = () => setYouTubeVolume(volume);
+      applyVol();
+      setTimeout(applyVol, 150);
+      setTimeout(applyVol, 500);
+      setTimeout(applyVol, 1200);
     }
   }
 }
@@ -86,10 +114,13 @@ export function initYouTubeListenerHandshake(): void {
 }
 
 /**
- * Listen for YouTube iframe player status changes (e.g. video ended)
+ * Listen for YouTube iframe player status changes and real-time playback updates
  * YouTube player state: 0 is ENDED, 1 is PLAYING, 2 is PAUSED
  */
-export function setupYouTubeStateListener(onVideoEnded: () => void): () => void {
+export function setupYouTubeStateListener(
+  onVideoEnded: () => void,
+  onTimeUpdate?: (currentTime: number, duration: number) => void
+): () => void {
   if (typeof window === 'undefined') return () => {};
 
   // Request listening handshake initially and periodically until connected
@@ -108,11 +139,25 @@ export function setupYouTubeStateListener(onVideoEnded: () => void): () => void 
     }
   };
 
+  let lastTimeUpdate = 0;
   const handleMessage = (event: MessageEvent) => {
     try {
       if (!event.data) return;
       const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
       if (!data) return;
+
+      // Real-time time & duration reporting from YouTube IFrame API (throttled to at most every 500ms)
+      if (data.info && onTimeUpdate) {
+        const ct = typeof data.info.currentTime === 'number' ? data.info.currentTime : undefined;
+        const dur = typeof data.info.duration === 'number' && data.info.duration > 0 ? data.info.duration : undefined;
+        if (typeof ct === 'number') {
+          const now = Date.now();
+          if (now - lastTimeUpdate >= 500) {
+            lastTimeUpdate = now;
+            onTimeUpdate(ct, dur || 0);
+          }
+        }
+      }
 
       // 1. YouTube IFrame API onStateChange event:
       // info === 0 or info.playerState === 0 represents YT.PlayerState.ENDED

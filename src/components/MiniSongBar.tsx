@@ -15,11 +15,14 @@ import {
   Sliders
 } from 'lucide-react';
 import { SongTrack } from '../types';
-import { seekYouTubeVideo } from '../utils/youtubePlayer';
+import { formatSecondsToTime } from '../utils/youtubePlayer';
 
 interface MiniSongBarProps {
   currentTrack: SongTrack;
   isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  onSeek: (seconds: number) => void;
   onTogglePlay: () => void;
   onNextTrack: () => void;
   onPrevTrack: () => void;
@@ -35,6 +38,9 @@ interface MiniSongBarProps {
 export const MiniSongBar: React.FC<MiniSongBarProps> = ({
   currentTrack,
   isPlaying,
+  currentTime,
+  duration,
+  onSeek,
   onTogglePlay,
   onNextTrack,
   onPrevTrack,
@@ -46,12 +52,12 @@ export const MiniSongBar: React.FC<MiniSongBarProps> = ({
   volume,
   onVolumeChange,
 }) => {
-  const [seekPercent, setSeekPercent] = useState<number>(0);
+  const seekPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
-    setSeekPercent(val);
-    seekYouTubeVideo((val / 100) * 210);
+    const targetSeconds = (val / 100) * (duration || 210);
+    onSeek(targetSeconds);
   };
 
   return (
@@ -126,15 +132,15 @@ export const MiniSongBar: React.FC<MiniSongBarProps> = ({
                 type="range"
                 min="0"
                 max="100"
-                value={seekPercent}
+                value={Math.round(seekPercent)}
                 onChange={handleSeekChange}
                 aria-label="Video timeline seek slider"
                 className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400 hover:accent-amber-300 transition-all"
                 title="Drag to scrub through video timeline"
               />
             </div>
-            <span className="text-[10px] font-mono font-semibold text-amber-400 w-8 text-right shrink-0">
-              {seekPercent}%
+            <span className="text-[10px] font-mono font-semibold text-amber-400 shrink-0 whitespace-nowrap">
+              {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
             </span>
           </div>
 

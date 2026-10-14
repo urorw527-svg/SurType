@@ -18,11 +18,14 @@ import {
   Disc3
 } from 'lucide-react';
 import { SongTrack, InstantSwitchCategory } from '../types';
-import { seekYouTubeVideo } from '../utils/youtubePlayer';
+import { formatSecondsToTime } from '../utils/youtubePlayer';
 
 interface TypingMusicDockProps {
   currentTrack: SongTrack;
   isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  onSeek: (seconds: number) => void;
   onTogglePlay: () => void;
   onNextTrack: () => void;
   onPrevTrack: () => void;
@@ -39,6 +42,9 @@ interface TypingMusicDockProps {
 export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
   currentTrack,
   isPlaying,
+  currentTime,
+  duration,
+  onSeek,
   onTogglePlay,
   onNextTrack,
   onPrevTrack,
@@ -51,13 +57,12 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
   volume,
   onVolumeChange,
 }) => {
-  const [seekPercent, setSeekPercent] = useState<number>(0);
+  const seekPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
-    setSeekPercent(val);
-    // Standard song duration assumed 210s (3.5 mins) for scrubbing
-    seekYouTubeVideo((val / 100) * 210);
+    const targetSeconds = (val / 100) * (duration || 210);
+    onSeek(targetSeconds);
   };
 
   return (
@@ -248,17 +253,19 @@ export const TypingMusicDock: React.FC<TypingMusicDockProps> = ({
               <Sliders className="w-3 h-3" />
               <span>Video Scrub</span>
             </span>
-            <span>{seekPercent}%</span>
+            <span className="text-amber-400 font-semibold">
+              {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
+            </span>
           </div>
           <input
             type="range"
             min="0"
             max="100"
-            value={seekPercent}
+            value={Math.round(seekPercent)}
             onChange={handleSeekChange}
             aria-label="Video seek slider"
             className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400 hover:accent-amber-300"
-            title="Drag to go to video middle or wherever you want"
+            title="Drag to scrub video position"
           />
         </div>
 

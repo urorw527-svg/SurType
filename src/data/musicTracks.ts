@@ -1,7 +1,7 @@
 import { SongTrack } from '../types';
 
 export const CURATED_TRACKS: SongTrack[] = [
-  // --- HINDI HITS (User favorites & trending) ---
+  // --- HINDI HITS & CLASSICS ---
   {
     id: 'jhol-maanu',
     youtubeId: '-2RAq5o5pwc',
@@ -11,7 +11,7 @@ export const CURATED_TRACKS: SongTrack[] = [
     language: 'hindi',
     duration: '4:39',
     tag: 'Hindi · Coke Studio',
-    highlightNote: 'Requested by you! Melodic indie flow with infectious chill rhythm.',
+    highlightNote: 'Melodic indie flow with infectious chill rhythm.',
     thumbnail: 'https://i.ytimg.com/vi/-2RAq5o5pwc/hqdefault.jpg'
   },
   {
@@ -122,8 +122,68 @@ export const CURATED_TRACKS: SongTrack[] = [
     highlightNote: 'Gentle piano cadence that aligns smoothly with typing speed.',
     thumbnail: 'https://i.ytimg.com/vi/IJq0yyWug1k/hqdefault.jpg'
   },
+  {
+    id: 'raataan-lambiyan',
+    youtubeId: 'gvyUuxdRdR4',
+    title: 'Raataan Lambiyan',
+    artist: 'Jubin Nautiyal & Asees Kaur',
+    category: 'favorite',
+    language: 'hindi',
+    duration: '3:50',
+    tag: 'Hindi · Romantic Folk',
+    highlightNote: 'Serene acoustic flow and gentle percussions.',
+    thumbnail: 'https://i.ytimg.com/vi/gvyUuxdRdR4/hqdefault.jpg'
+  },
+  {
+    id: 'shayad-arijit',
+    youtubeId: 'ILmsf1v1w9M',
+    title: 'Shayad',
+    artist: 'Arijit Singh & Pritam',
+    category: 'acoustic',
+    language: 'hindi',
+    duration: '4:07',
+    tag: 'Hindi · Gentle Acoustic',
+    highlightNote: 'Warm guitar strumming providing tranquil background tempo.',
+    thumbnail: 'https://i.ytimg.com/vi/ILmsf1v1w9M/hqdefault.jpg'
+  },
+  {
+    id: 'ilahi-arijit',
+    youtubeId: 'fdubeMFwuGs',
+    title: 'Ilahi',
+    artist: 'Arijit Singh',
+    category: 'upbeat',
+    language: 'hindi',
+    duration: '3:48',
+    tag: 'Hindi · Upbeat Wanderer',
+    highlightNote: 'Lively acoustic guitar and upbeat tempo for high-speed typing.',
+    thumbnail: 'https://i.ytimg.com/vi/fdubeMFwuGs/hqdefault.jpg'
+  },
+  {
+    id: 'kabira-tochi',
+    youtubeId: 'jHNNMj5bNQw',
+    title: 'Kabira',
+    artist: 'Tochi Raina & Rekha Bhardwaj',
+    category: 'acoustic',
+    language: 'hindi',
+    duration: '3:43',
+    tag: 'Hindi · Folk Acoustic',
+    highlightNote: 'Timeless soulful folk strums for deep focus.',
+    thumbnail: 'https://i.ytimg.com/vi/jHNNMj5bNQw/hqdefault.jpg'
+  },
+  {
+    id: 'apna-bana-le',
+    youtubeId: 'u4YwU9K5C94',
+    title: 'Apna Bana Le',
+    artist: 'Arijit Singh & Sachin-Jigar',
+    category: 'favorite',
+    language: 'hindi',
+    duration: '4:21',
+    tag: 'Hindi · Heartfelt Melody',
+    highlightNote: 'Atmospheric keys and soaring vocals.',
+    thumbnail: 'https://i.ytimg.com/vi/u4YwU9K5C94/hqdefault.jpg'
+  },
 
-  // --- BANGLA GEMS (100% Verified Working) ---
+  // --- BANGLA GEMS ---
   {
     id: 'deora-cs-bangla',
     youtubeId: 'O8yq399dsyk',
@@ -133,7 +193,7 @@ export const CURATED_TRACKS: SongTrack[] = [
     language: 'bangla',
     duration: '4:20',
     tag: 'Bangla · Coke Studio',
-    highlightNote: 'High energy sari gaan boat song fusion, rhythmic and powerful.',
+    highlightNote: 'High energy boat song fusion, rhythmic and powerful.',
     thumbnail: 'https://i.ytimg.com/vi/O8yq399dsyk/hqdefault.jpg'
   },
   {
@@ -232,8 +292,20 @@ export const CURATED_TRACKS: SongTrack[] = [
     highlightNote: 'Lush harmonies and traditional percussion for a calm typing state.',
     thumbnail: 'https://i.ytimg.com/vi/mT9Z0nYP70I/hqdefault.jpg'
   },
+  {
+    id: 'nasek-nasek',
+    youtubeId: 'z62Ocx8Fp4U',
+    title: 'Nasek Nasek',
+    artist: 'Animes Roy x Pantha Kanai (CS Bangla)',
+    category: 'coke_studio',
+    language: 'bangla',
+    duration: '3:45',
+    tag: 'Bangla · Hajong Folk',
+    highlightNote: 'Energetic indigenous folk beat full of passion.',
+    thumbnail: 'https://i.ytimg.com/vi/z62Ocx8Fp4U/hqdefault.jpg'
+  },
 
-  // --- ENGLISH CHILL & LO-FI (100% Verified Working) ---
+  // --- ENGLISH CHILL, LO-FI & HITS ---
   {
     id: 'lofi-girl-stream',
     youtubeId: 'jfKfPfyJRdk',
@@ -305,6 +377,54 @@ export const CURATED_TRACKS: SongTrack[] = [
     tag: 'English · Indie Pop',
     highlightNote: 'Driving synthpop tempo designed for fast, accurate typing flows.',
     thumbnail: 'https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg'
+  },
+  {
+    id: 'stay-kid-laroi',
+    youtubeId: 'kTJczUoc26U',
+    title: 'Stay',
+    artist: 'The Kid LAROI & Justin Bieber',
+    category: 'upbeat',
+    language: 'english',
+    duration: '2:21',
+    tag: 'English · High Energy',
+    highlightNote: 'Rapid fire pop beat keeping fingers moving without pause.',
+    thumbnail: 'https://i.ytimg.com/vi/kTJczUoc26U/hqdefault.jpg'
+  },
+  {
+    id: 'blinding-lights',
+    youtubeId: '4NRXx6U8ABQ',
+    title: 'Blinding Lights',
+    artist: 'The Weeknd',
+    category: 'upbeat',
+    language: 'english',
+    duration: '3:20',
+    tag: 'English · Synthwave',
+    highlightNote: 'High-tempo 80s synth bass for maximum words-per-minute typing pace.',
+    thumbnail: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg'
+  },
+  {
+    id: 'levitating-dua-lipa',
+    youtubeId: 'TUVcZfQe-Kw',
+    title: 'Levitating',
+    artist: 'Dua Lipa',
+    category: 'upbeat',
+    language: 'english',
+    duration: '3:23',
+    tag: 'English · Disco Pop',
+    highlightNote: 'Catchy disco groove that makes testing rhythm feel effortless.',
+    thumbnail: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg'
+  },
+  {
+    id: 'perfect-ed-sheeran',
+    youtubeId: '2Vv-BfVoq4g',
+    title: 'Perfect',
+    artist: 'Ed Sheeran',
+    category: 'acoustic',
+    language: 'english',
+    duration: '4:23',
+    tag: 'English · Acoustic Ballad',
+    highlightNote: 'Soothing triple-meter guitar rhythm for gentle practice.',
+    thumbnail: 'https://i.ytimg.com/vi/2Vv-BfVoq4g/hqdefault.jpg'
   }
 ];
 

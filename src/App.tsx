@@ -9,32 +9,38 @@ import { TopBar } from './components/TopBar';
 import { MiniSongBar } from './components/MiniSongBar';
 import { TypingMusicDock } from './components/TypingMusicDock';
 import { YouTubeMusicLounge } from './components/YouTubeMusicLounge';
+import { MultiplayerLounge } from './components/MultiplayerLounge';
+import { MissionsLounge } from './components/MissionsLounge';
 import { TypingEngine } from './components/TypingEngine';
 import { TestResultsModal } from './components/TestResultsModal';
 import { HistoryStats } from './components/HistoryStats';
 import { SettingsView } from './components/SettingsView';
-import { AuthModal } from './components/AuthModal';
-import { supabase } from './lib/supabaseClient';
-import { SongTrack, TypingResult, TypingSettings, InstantSwitchCategory } from './types';
+import { 
+  SongTrack, 
+  TypingResult, 
+  TypingSettings, 
+  InstantSwitchCategory,
+  UserProfile,
+  NavigationTab 
+} from './types';
 import { CURATED_TRACKS } from './data/musicTracks';
 import { 
   playYouTubeVideo, 
   pauseYouTubeVideo, 
   switchYouTubeVideo, 
   setupYouTubeStateListener,
-  setYouTubeVolume 
+  setYouTubeVolume,
+  seekYouTubeVideo,
+  parseDurationToSeconds
 } from './utils/youtubePlayer';
-
-interface AuthUser {
-  id: string;
-  isAnonymous?: boolean;
-  email?: string;
-  user_metadata?: {
-    full_name?: string;
-    avatar_url?: string;
-    name?: string;
-  };
-}
+import { 
+  loginWithGoogle, 
+  loginAsGuest, 
+  logoutUser, 
+  onAuthUserChanged,
+  addXPToUser 
+} from './utils/firebase';
+import { loadStoredMissions, saveStoredMissions } from './utils/missionsData';
 
 const DEFAULT_SETTINGS: TypingSettings = {
   soundTheme: 'creamy',
@@ -65,92 +71,26 @@ function pickInitialTrack(): SongTrack {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'practice' | 'music' | 'history' | 'settings'>('practice');
+  const [activeTab, setActiveTab] = useState<NavigationTab>('practice');
   const [focusMode, setFocusMode] = useState<boolean>(false);
   const [practiceKey, setPracticeKey] = useState<number>(0);
 
-  // Authentication State with Supabase
-  const [user, setUser] = useState<AuthUser | null>(() => {
+  // User Authentication state
+  const [user, setUser] = useState<UserProfile | null>(() => {
     try {
-      const savedGuest = localStorage.getItem('surtype_guest_user');
-      return savedGuest ? JSON.parse(savedGuest) : null;
+      const saved = localStorage.getItem('surtype_user_profile');
+      return saved ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
   });
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [isFirstVisit, setIsFirstVisit] = useState<boolean>(false);
-
-  // Check Supabase session & handle first visit login requirement
-  useEffect(() => {
-    async function initAuth() {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (data?.session?.user) {
-          setUser({
-            id: data.session.user.id,
-            isAnonymous: data.session.user.is_anonymous,
-            email: data.session.user.email,
-            user_metadata: data.session.user.user_metadata,
-          });
-        } else {
-          // If no session & never visited before, prompt to login with Guest or Google
-          const hasVisitedBefore = localStorage.getItem('surtype_has_visited');
-          const savedGuest = localStorage.getItem('surtype_guest_user');
-          if (!hasVisitedBefore && !savedGuest) {
-            setIsFirstVisit(true);
-            setIsAuthModalOpen(true);
-            localStorage.setItem('surtype_has_visited', 'true');
-          }
-        }
-      } catch (err) {
-        console.warn('Auth session check notice:', err);
-      }
-    }
-
-    initAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser({
-          id: session.user.id,
-          isAnonymous: session.user.is_anonymous,
-          email: session.user.email,
-          user_metadata: session.user.user_metadata,
-        });
-      } else {
-        const savedGuest = localStorage.getItem('surtype_guest_user');
-        if (savedGuest) {
-          try {
-            setUser(JSON.parse(savedGuest));
-          } catch {
-            setUser(null);
-          }
-        } else {
-          setUser(null);
-        }
-      }
-    });
-
-    return () => {
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('Sign out:', e);
-    }
-    localStorage.removeItem('surtype_guest_user');
-    setUser(null);
-    setIsAuthModalOpen(false);
-  };
+  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
 
   // Music state - selects a fresh different song on every page refresh!
   const [currentTrack, setCurrentTrack] = useState<SongTrack>(() => pickInitialTrack());
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(() => parseDurationToSeconds(currentTrack.duration));
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<InstantSwitchCategory>('all');
   const [volume, setVolume] = useState<number>(() => {
@@ -161,6 +101,10 @@ export default function App() {
       return 75;
     }
   });
+
+  // Track history stack (for Skip Back) and unplayed pool set (to prevent circling same songs)
+  const historyStackRef = useRef<SongTrack[]>([]);
+  const playedIdsRef = useRef<Set<string>>(new Set([currentTrack.id]));
 
   const [customTracks, setCustomTracks] = useState<SongTrack[]>(() => {
     try {
@@ -213,15 +157,45 @@ export default function App() {
     } catch {}
   };
 
+  const durationRef = useRef(duration);
+  durationRef.current = duration;
+
+  // Smooth real-time playback clock that runs in sync with video timing
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setCurrentTime(prev => {
+        const max = durationRef.current;
+        const next = prev + 0.5;
+        if (max > 0 && next >= max) {
+          return max;
+        }
+        return next;
+      });
+    }, 500);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  // Scrub handler
+  const handleSeek = (seconds: number) => {
+    const safeSec = Math.max(0, Math.min(seconds, duration || 210));
+    setCurrentTime(safeSec);
+    seekYouTubeVideo(safeSec);
+  };
+
   // Music playback handlers
   const handleTrackSelect = (track: SongTrack, autoPlay = true, mode?: 'audio' | 'video') => {
+    historyStackRef.current.push(currentTrack);
+    playedIdsRef.current.add(track.id);
     setCurrentTrack(track);
+    setCurrentTime(0);
+    setDuration(parseDurationToSeconds(track.duration));
     if (mode) {
       setShowVideo(mode === 'video');
     }
     if (autoPlay) {
       setIsPlaying(true);
-      switchYouTubeVideo(track.youtubeId);
+      switchYouTubeVideo(track.youtubeId, volume);
     }
   };
 
@@ -249,26 +223,51 @@ export default function App() {
     return all;
   };
 
+  // Non-repeating true random selection to prevent circling the same song!
   const handleNextTrack = () => {
     const pool = getCategoryPool(selectedCategory);
     if (pool.length === 0) return;
-    const currentIndex = pool.findIndex(t => t.id === currentTrack.id);
-    const nextIndex = (currentIndex + 1) % pool.length;
-    const next = pool[nextIndex];
+
+    historyStackRef.current.push(currentTrack);
+
+    // Filter to songs that haven't been played in this queue cycle yet
+    let unplayed = pool.filter(t => !playedIdsRef.current.has(t.id) && t.id !== currentTrack.id);
+    if (unplayed.length === 0) {
+      // All tracks have been played! Reset unplayed pool to start a fresh non-repeating cycle
+      playedIdsRef.current.clear();
+      playedIdsRef.current.add(currentTrack.id);
+      unplayed = pool.filter(t => t.id !== currentTrack.id);
+    }
+
+    const next = unplayed.length > 0
+      ? unplayed[Math.floor(Math.random() * unplayed.length)]
+      : pool[0];
+
+    playedIdsRef.current.add(next.id);
     setCurrentTrack(next);
+    setCurrentTime(0);
+    setDuration(parseDurationToSeconds(next.duration));
     setIsPlaying(true);
-    switchYouTubeVideo(next.youtubeId);
+    switchYouTubeVideo(next.youtubeId, volume);
   };
 
   const handlePrevTrack = () => {
     const pool = getCategoryPool(selectedCategory);
     if (pool.length === 0) return;
-    const currentIndex = pool.findIndex(t => t.id === currentTrack.id);
-    const prevIndex = (currentIndex - 1 + pool.length) % pool.length;
-    const prev = pool[prevIndex];
+
+    let prev = historyStackRef.current.pop();
+    if (!prev || prev.id === currentTrack.id) {
+      const candidates = pool.filter(t => t.id !== currentTrack.id);
+      prev = candidates.length > 0
+        ? candidates[Math.floor(Math.random() * candidates.length)]
+        : pool[0];
+    }
+
     setCurrentTrack(prev);
+    setCurrentTime(0);
+    setDuration(parseDurationToSeconds(prev.duration));
     setIsPlaying(true);
-    switchYouTubeVideo(prev.youtubeId);
+    switchYouTubeVideo(prev.youtubeId, volume);
   };
 
   // Setup Autoplay listener: when current video ends, automatically play next track!
@@ -278,11 +277,19 @@ export default function App() {
   autoAdvanceRef.current = settings.autoAdvanceSongs;
 
   useEffect(() => {
-    const cleanup = setupYouTubeStateListener(() => {
-      if (autoAdvanceRef.current) {
-        handleNextTrackRef.current();
+    const cleanup = setupYouTubeStateListener(
+      () => {
+        if (autoAdvanceRef.current) {
+          handleNextTrackRef.current();
+        }
+      },
+      (ytCurrentTime, ytDuration) => {
+        setCurrentTime(ytCurrentTime);
+        if (ytDuration > 0) {
+          setDuration(prev => (Math.abs(prev - ytDuration) > 1 ? ytDuration : prev));
+        }
       }
-    });
+    );
     return cleanup;
   }, []);
 
@@ -296,15 +303,26 @@ export default function App() {
     const pool = getCategoryPool(cat);
     if (pool.length === 0) return;
 
-    // Pick a different track in this category
-    const candidates = pool.filter(t => t.id !== currentTrack.id);
-    const chosen = candidates.length > 0
-      ? candidates[Math.floor(Math.random() * candidates.length)]
+    historyStackRef.current.push(currentTrack);
+
+    // Pick a truly different unplayed track in this category
+    let unplayed = pool.filter(t => !playedIdsRef.current.has(t.id) && t.id !== currentTrack.id);
+    if (unplayed.length === 0) {
+      playedIdsRef.current.clear();
+      playedIdsRef.current.add(currentTrack.id);
+      unplayed = pool.filter(t => t.id !== currentTrack.id);
+    }
+
+    const chosen = unplayed.length > 0
+      ? unplayed[Math.floor(Math.random() * unplayed.length)]
       : pool[0];
 
+    playedIdsRef.current.add(chosen.id);
     setCurrentTrack(chosen);
+    setCurrentTime(0);
+    setDuration(parseDurationToSeconds(chosen.duration));
     setIsPlaying(true);
-    switchYouTubeVideo(chosen.youtubeId);
+    switchYouTubeVideo(chosen.youtubeId, volume);
   };
 
   const handleAddCustomTrack = (track: SongTrack) => {
@@ -313,6 +331,50 @@ export default function App() {
       localStorage.setItem('surtype_custom_tracks', JSON.stringify(updated));
       return updated;
     });
+  };
+
+  const [authWarning, setAuthWarning] = useState<string | null>(null);
+
+  // Firebase Auth Subscription
+  useEffect(() => {
+    const unsub = onAuthUserChanged((fbUser) => {
+      setUser(fbUser);
+    });
+    return unsub;
+  }, []);
+
+  const handleLoginGoogle = async () => {
+    setIsLoggingIn(true);
+    setAuthWarning(null);
+    try {
+      const res = await loginWithGoogle();
+      setUser(res.profile);
+      if (res.warning) {
+        setAuthWarning(res.warning);
+      }
+    } catch (err: any) {
+      console.warn('Google sign-in notice:', err);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLoginGuest = async () => {
+    setIsLoggingIn(true);
+    setAuthWarning(null);
+    try {
+      const profile = await loginAsGuest();
+      setUser(profile);
+    } catch (err: any) {
+      console.warn('Guest sign-in failed:', err);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setUser(null);
   };
 
   // Typing test completion
@@ -327,6 +389,40 @@ export default function App() {
       localStorage.setItem('surtype_history', JSON.stringify(updated));
       return updated;
     });
+
+    // Award XP to user
+    if (user) {
+      const gainedXP = Math.max(25, Math.round(result.wpm * 0.8));
+      addXPToUser(user.uid, gainedXP).then(res => {
+        setUser(prev => prev ? { ...prev, xp: res.newXP, level: res.newLevel } : null);
+      });
+    }
+
+    // Auto-progress daily missions
+    try {
+      const curMissions = loadStoredMissions();
+      let changed = false;
+      const updatedMissions = curMissions.map(m => {
+        if (m.id === 'first_test') {
+          m.currentCount = Math.min(m.targetCount, m.currentCount + 1);
+          changed = true;
+        }
+        if (m.id === 'pace_45' && result.wpm >= 45) {
+          m.currentCount = 1;
+          changed = true;
+        }
+        if (m.id === 'pace_60' && result.wpm >= 60) {
+          m.currentCount = 1;
+          changed = true;
+        }
+        if (m.id === 'accuracy_95' && result.accuracy >= 95) {
+          m.currentCount = 1;
+          changed = true;
+        }
+        return m;
+      });
+      if (changed) saveStoredMissions(updatedMissions);
+    } catch {}
   };
 
   const handleClearHistory = () => {
@@ -391,6 +487,9 @@ export default function App() {
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
+            onLoad={() => {
+              setYouTubeVolume(volume);
+            }}
           />
         </div>
       </div>
@@ -399,6 +498,9 @@ export default function App() {
       <MiniSongBar
         currentTrack={currentTrack}
         isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        onSeek={handleSeek}
         onTogglePlay={handleTogglePlay}
         onNextTrack={handleNextTrack}
         onPrevTrack={handlePrevTrack}
@@ -416,15 +518,31 @@ export default function App() {
         <TopBar
           activeTab={activeTab}
           onTabChange={setActiveTab}
+          user={user}
+          onLoginGoogle={handleLoginGoogle}
+          onLoginGuest={handleLoginGuest}
+          onLogout={handleLogout}
           focusMode={focusMode}
           onToggleFocusMode={() => setFocusMode(prev => !prev)}
           personalBestWpm={personalBestWpm}
-          user={user}
-          onOpenAuthModal={() => {
-            setIsFirstVisit(false);
-            setIsAuthModalOpen(true);
-          }}
+          isLoggingIn={isLoggingIn}
         />
+      )}
+
+      {/* Auth Guidance Notice */}
+      {authWarning && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-200 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-bold text-amber-400 shrink-0">ℹ Note:</span>
+            <span className="truncate">{authWarning}</span>
+          </div>
+          <button 
+            onClick={() => setAuthWarning(null)} 
+            className="text-amber-400 hover:text-white font-bold ml-3 px-2 py-0.5 rounded hover:bg-amber-500/20 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
       )}
 
       {/* Main Content Area */}
@@ -455,6 +573,9 @@ export default function App() {
                 <TypingMusicDock
                   currentTrack={currentTrack}
                   isPlaying={isPlaying}
+                  currentTime={currentTime}
+                  duration={duration}
+                  onSeek={handleSeek}
                   onTogglePlay={handleTogglePlay}
                   onNextTrack={handleNextTrack}
                   onPrevTrack={handlePrevTrack}
@@ -471,6 +592,33 @@ export default function App() {
             )}
           </div>
         </div>
+
+        {/* Real-Time Multiplayer Rooms (Firestore-backed 4-Digit Codes) */}
+        {activeTab === 'multiplayer' && (
+          <MultiplayerLounge
+            user={user}
+            onRequireLogin={handleLoginGoogle}
+            currentTrack={currentTrack}
+            onTrackSelect={(track) => handleTrackSelect(track, true)}
+            onPlaySong={() => {
+              setIsPlaying(true);
+              playYouTubeVideo();
+            }}
+          />
+        )}
+
+        {/* Levels & Missions Progression View */}
+        {activeTab === 'missions' && (
+          <MissionsLounge
+            user={user}
+            onRequireLogin={handleLoginGoogle}
+            onSelectPractice={() => setActiveTab('practice')}
+            onSelectMultiplayer={() => setActiveTab('multiplayer')}
+            onUpdateUserXP={(newXP, newLevel) => {
+              setUser(prev => prev ? { ...prev, xp: newXP, level: newLevel } : null);
+            }}
+          />
+        )}
 
         {/* Dedicated Full Page for Song Control & YouTube Search Feed */}
         {activeTab === 'music' && (
@@ -493,6 +641,9 @@ export default function App() {
             <YouTubeMusicLounge
               currentTrack={currentTrack}
               isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+              onSeek={handleSeek}
               onTrackSelect={handleTrackSelect}
               onTogglePlay={handleTogglePlay}
               onNextTrack={handleNextTrack}
@@ -540,18 +691,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Account / Log In Modal (First visit popup or triggered via top bar) */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        user={user}
-        onAuthSuccess={(authUser) => {
-          setUser(authUser);
-          setIsAuthModalOpen(false);
-        }}
-        onSignOut={handleSignOut}
-        isFirstVisitPrompt={isFirstVisit}
-      />
 
       {/* Completion Modal */}
       {activeResult && (

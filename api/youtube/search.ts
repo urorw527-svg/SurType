@@ -103,6 +103,33 @@ const ALL_CURATED_FEED: SearchResultItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/IJq0yyWug1k/hqdefault.jpg',
     viewCount: '850M views'
   },
+  {
+    id: 'ILmsf1v1w9M',
+    title: 'Shayad - Love Aaj Kal | Arijit Singh & Pritam',
+    channel: 'Sony Music India',
+    duration: '4:07',
+    category: 'hindi',
+    thumbnail: 'https://i.ytimg.com/vi/ILmsf1v1w9M/hqdefault.jpg',
+    viewCount: '410M views'
+  },
+  {
+    id: 'fdubeMFwuGs',
+    title: 'Ilahi - Yeh Jawaani Hai Deewani | Arijit Singh',
+    channel: 'T-Series',
+    duration: '3:48',
+    category: 'hindi',
+    thumbnail: 'https://i.ytimg.com/vi/fdubeMFwuGs/hqdefault.jpg',
+    viewCount: '320M views'
+  },
+  {
+    id: 'jHNNMj5bNQw',
+    title: 'Kabira - Yeh Jawaani Hai Deewani | Tochi Raina & Rekha Bhardwaj',
+    channel: 'T-Series',
+    duration: '3:43',
+    category: 'hindi',
+    thumbnail: 'https://i.ytimg.com/vi/jHNNMj5bNQw/hqdefault.jpg',
+    viewCount: '490M views'
+  },
 
   // --- BANGLA ---
   {
@@ -159,6 +186,33 @@ const ALL_CURATED_FEED: SearchResultItem[] = [
     thumbnail: 'https://i.ytimg.com/vi/zEqqW-USajs/hqdefault.jpg',
     viewCount: '45M views'
   },
+  {
+    id: '9c1NIrAqXe4',
+    title: 'Bulbuli | Coke Studio Bangla | Season 2 | Ritu Raj x Nandita',
+    channel: 'Coke Studio Bangla',
+    duration: '3:58',
+    category: 'bangla',
+    thumbnail: 'https://i.ytimg.com/vi/9c1NIrAqXe4/hqdefault.jpg',
+    viewCount: '30M views'
+  },
+  {
+    id: 'YxJjFjP0crs',
+    title: 'Patar Bashori | Coke Studio Bangla | Season 4 | Ishaan x Sunidhi',
+    channel: 'Coke Studio Bangla',
+    duration: '4:10',
+    category: 'bangla',
+    thumbnail: 'https://i.ytimg.com/vi/YxJjFjP0crs/hqdefault.jpg',
+    viewCount: '15M views'
+  },
+  {
+    id: 'mT9Z0nYP70I',
+    title: 'Mothura | Coke Studio Bangla | Season 3 | Ankan x Nandita',
+    channel: 'Coke Studio Bangla',
+    duration: '4:30',
+    category: 'bangla',
+    thumbnail: 'https://i.ytimg.com/vi/mT9Z0nYP70I/hqdefault.jpg',
+    viewCount: '18M views'
+  },
 
   // --- ENGLISH ---
   {
@@ -214,6 +268,42 @@ const ALL_CURATED_FEED: SearchResultItem[] = [
     category: 'english',
     thumbnail: 'https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg',
     viewCount: '780M views'
+  },
+  {
+    id: 'kTJczUoc26U',
+    title: 'Stay - The Kid LAROI & Justin Bieber',
+    channel: 'The Kid LAROI',
+    duration: '2:21',
+    category: 'english',
+    thumbnail: 'https://i.ytimg.com/vi/kTJczUoc26U/hqdefault.jpg',
+    viewCount: '890M views'
+  },
+  {
+    id: '4NRXx6U8ABQ',
+    title: 'Blinding Lights - The Weeknd',
+    channel: 'The Weeknd',
+    duration: '3:20',
+    category: 'english',
+    thumbnail: 'https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg',
+    viewCount: '920M views'
+  },
+  {
+    id: 'TUVcZfQe-Kw',
+    title: 'Levitating - Dua Lipa',
+    channel: 'Dua Lipa',
+    duration: '3:23',
+    category: 'english',
+    thumbnail: 'https://i.ytimg.com/vi/TUVcZfQe-Kw/hqdefault.jpg',
+    viewCount: '870M views'
+  },
+  {
+    id: '2Vv-BfVoq4g',
+    title: 'Perfect - Ed Sheeran',
+    channel: 'Ed Sheeran',
+    duration: '4:23',
+    category: 'english',
+    thumbnail: 'https://i.ytimg.com/vi/2Vv-BfVoq4g/hqdefault.jpg',
+    viewCount: '3.6B views'
   }
 ];
 
@@ -270,7 +360,7 @@ async function searchYouTubeFeed(query: string): Promise<SearchResultItem[]> {
               publishedTime,
             });
 
-            if (results.length >= 20) break;
+            if (results.length >= 25) break;
           }
         }
 
@@ -290,7 +380,7 @@ async function searchYouTubeFeed(query: string): Promise<SearchResultItem[]> {
     return qTokens.some(token => text.includes(token));
   });
 
-  return filtered;
+  return shuffleArray(filtered.length > 0 ? filtered : ALL_CURATED_FEED);
 }
 
 export default async function handler(req: any, res: any) {
@@ -328,10 +418,10 @@ export default async function handler(req: any, res: any) {
 
     const results = await searchYouTubeFeed(q);
     res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ results, query: q }));
+    return res.end(JSON.stringify({ results: shuffleArray(results), query: q }));
   } catch (err: any) {
     console.error('Search error in handler:', err);
     res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ results: [], error: 'Failed to search' }));
+    return res.end(JSON.stringify({ results: shuffleArray(ALL_CURATED_FEED), error: 'Fallback to random catalog' }));
   }
 }

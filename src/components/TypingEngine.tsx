@@ -7,7 +7,8 @@ import {
   Target, 
   Gauge, 
   BookOpen, 
-  Clock
+  Clock,
+  Shuffle
 } from 'lucide-react';
 import { 
   TypingResult, 
@@ -42,7 +43,7 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
   // Duration: 30 seconds or 1 minute (60s)
   const [testDuration, setTestDuration] = useState<30 | 60>(60);
   const [currentPassage, setCurrentPassage] = useState<TypingPassage>(() => getRandomPassage());
-  const [words, setWords] = useState<string[]>(() => getRandomPassage().text.trim().split(/\s+/));
+  const [words, setWords] = useState<string[]>(() => currentPassage ? currentPassage.text.trim().split(/\s+/) : getRandomPassage().text.trim().split(/\s+/));
   const [targetPace, setTargetPace] = useState<TargetWpmGoal>(settings.targetWpmGoal || 50);
 
   // Active typing state
@@ -79,6 +80,12 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
     timeline: [] as TypingStatsSnapshot[],
   });
 
+  // Refs for stable access inside callbacks without triggering dependency loops
+  const currentPassageRef = useRef<TypingPassage>(currentPassage);
+  currentPassageRef.current = currentPassage;
+  const testDurationRef = useRef<number>(testDuration);
+  testDurationRef.current = testDuration;
+
   // Reset / Initialize test
   const initializeTest = useCallback((newPassage?: TypingPassage) => {
     isFinishingRef.current = false;
@@ -90,12 +97,13 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
     setStreak(0);
     setTimeline([]);
     setElapsedTime(0);
-    setTimeRemaining(testDuration);
+    setTimeRemaining(testDurationRef.current);
     hasTriggeredMusicRef.current = false;
 
-    const p = newPassage || getRandomPassage();
-    setCurrentPassage(p);
-    // Prepare words with a fallback buffer so words never run out during the 30s or 60s
+    const p = newPassage || currentPassageRef.current;
+    if (newPassage) {
+      setCurrentPassage(newPassage);
+    }
     setWords(p.text.trim().split(/\s+/));
 
     if (timerRef.current) {
@@ -106,16 +114,21 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
     setTimeout(() => {
       inputRef.current?.focus();
     }, 40);
-  }, [testDuration]);
+  }, []);
 
   const handleNextPassage = () => {
-    const next = getRandomPassage();
+    const next = getRandomPassage(currentPassageRef.current?.id);
     initializeTest(next);
   };
 
+  const isFirstMountRef = useRef<boolean>(true);
   useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
     initializeTest();
-  }, [initializeTest, testKey]);
+  }, [testKey, initializeTest]);
 
   // Keep active word in comfortable view
   useEffect(() => {
@@ -300,17 +313,22 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
     }
   }, [isActive, isFinished, timeRemaining, elapsedTime, finishTest]);
 
-  // Record timeline snapshots safely
+  // Record timeline snapshots safely (at most once per elapsed second)
   useEffect(() => {
     if (!isActive || isFinished || elapsedTime <= 0) return;
     const timeInMin = Math.max(elapsedTime, 3) / 60;
     const liveWpm = Math.min(Math.round((correctChars / 5) / timeInMin), 150);
     const liveRaw = Math.min(Math.round((totalCharsTyped / 5) / timeInMin), 160);
-    setTimeline(prev => [
-      ...prev,
-      { second: elapsedTime, wpm: liveWpm, rawWpm: liveRaw, errors: incorrectChars }
-    ]);
-  }, [elapsedTime, isActive, isFinished, correctChars, totalCharsTyped, incorrectChars]);
+    setTimeline(prev => {
+      if (prev.length > 0 && prev[prev.length - 1].second === elapsedTime) {
+        return prev;
+      }
+      return [
+        ...prev,
+        { second: elapsedTime, wpm: liveWpm, rawWpm: liveRaw, errors: incorrectChars }
+      ];
+    });
+  }, [elapsedTime, isActive, isFinished]);
 
   // Handle Input Keydown
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -462,11 +480,11 @@ export const TypingEngine: React.FC<TypingEngineProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleNextPassage}
-              className="flex items-center gap-1 px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 rounded-lg transition-colors cursor-pointer"
-              title="Load a different story paragraph"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 text-slate-200 hover:text-amber-300 rounded-lg transition-colors cursor-pointer text-xs font-semibold"
+              title="Load a fresh random paragraph (never repeats)"
             >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>New Story</span>
+              <Shuffle className="w-3.5 h-3.5 text-amber-400" />
+              <span>Random Paragraph</span>
             </button>
 
             <button

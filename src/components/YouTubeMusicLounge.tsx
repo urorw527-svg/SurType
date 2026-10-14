@@ -24,12 +24,15 @@ import {
 } from 'lucide-react';
 import { SongTrack, YouTubeSearchResult, InstantSwitchCategory } from '../types';
 import { CURATED_TRACKS, extractYouTubeId } from '../data/musicTracks';
-import { seekYouTubeVideo } from '../utils/youtubePlayer';
+import { formatSecondsToTime } from '../utils/youtubePlayer';
 import { searchTracks } from '../utils/musicSearch';
 
 interface YouTubeMusicLoungeProps {
   currentTrack: SongTrack;
   isPlaying: boolean;
+  currentTime: number;
+  duration: number;
+  onSeek: (seconds: number) => void;
   onTrackSelect: (track: SongTrack, autoPlay?: boolean, mode?: 'audio' | 'video') => void;
   onTogglePlay: () => void;
   onNextTrack: () => void;
@@ -57,7 +60,16 @@ const RANDOM_QUERY_TOPICS = [
   'Bollywood Lo-Fi chill songs mix',
   'Pritom Hasan Coke Studio Bangla hits',
   'Sunflower Post Malone chill hits',
-  'Pasoori Ali Sethi Shae Gill'
+  'Pasoori Ali Sethi Shae Gill',
+  'Arijit Singh acoustic live hits',
+  'Shreya Ghoshal romantic songs acoustic',
+  'Coke Studio Bangla season 3 songs',
+  'Hindi indie acoustic focus songs',
+  'Chill english pop acoustic guitar',
+  'The Weeknd Blinding Lights acoustic',
+  'Dua Lipa Levitating lofi remix',
+  'Ed Sheeran acoustic songs',
+  'Stephen Sanchez retro love songs'
 ];
 
 const TRENDING_SEARCH_TAGS = [
@@ -74,6 +86,9 @@ const TRENDING_SEARCH_TAGS = [
 export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
   currentTrack,
   isPlaying,
+  currentTime,
+  duration,
+  onSeek,
   onTrackSelect,
   onTogglePlay,
   onNextTrack,
@@ -97,12 +112,13 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [seekPercent, setSeekPercent] = useState<number>(0);
+
+  const seekPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
-    setSeekPercent(val);
-    seekYouTubeVideo((val / 100) * 210);
+    const targetSeconds = (val / 100) * (duration || 210);
+    onSeek(targetSeconds);
   };
 
   // On initial mount, load a rich randomized feed
@@ -110,17 +126,28 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
     loadRandomFeed();
   }, []);
 
+  const lastRandomTopicIndexRef = React.useRef<number>(-1);
+
   const loadRandomFeed = async () => {
     setIsSearching(true);
     setSearchError(null);
     setActiveSearchTerm(null);
     try {
-      const randomTopic = RANDOM_QUERY_TOPICS[Math.floor(Math.random() * RANDOM_QUERY_TOPICS.length)];
+      // Pick a different random topic index every time
+      let nextIndex = Math.floor(Math.random() * RANDOM_QUERY_TOPICS.length);
+      if (nextIndex === lastRandomTopicIndexRef.current) {
+        nextIndex = (nextIndex + 1) % RANDOM_QUERY_TOPICS.length;
+      }
+      lastRandomTopicIndexRef.current = nextIndex;
+      const randomTopic = RANDOM_QUERY_TOPICS[nextIndex];
+
       const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(randomTopic)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.results && data.results.length > 0) {
-          setSearchResults(data.results);
+          // Shuffle results so feed is never in identical order
+          const shuffled = [...data.results].sort(() => Math.random() - 0.5);
+          setSearchResults(shuffled);
           setIsSearching(false);
           return;
         }
@@ -229,7 +256,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
         setSearchError(`No tracks found matching "${q}" in catalog.`);
       }
     } catch (err: any) {
-      console.error('Search error:', err);
+      console.warn('Search notice:', err);
       setSearchError('Live search request was blocked or timed out.');
       setSearchResults([]);
     } finally {
@@ -357,7 +384,7 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
             </button>
 
             {/* Video seek slide bar between Prev and Next buttons */}
-            <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800/90 px-3 py-1.5 rounded-xl min-w-[180px] sm:min-w-[220px]">
+            <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800/90 px-3 py-1.5 rounded-xl min-w-[200px] sm:min-w-[240px]">
               <span className="text-[10px] text-amber-400 font-semibold flex items-center gap-1 shrink-0 font-mono">
                 <Sliders className="w-3 h-3" />
                 <span>Scrub:</span>
@@ -366,14 +393,14 @@ export const YouTubeMusicLounge: React.FC<YouTubeMusicLoungeProps> = ({
                 type="range"
                 min="0"
                 max="100"
-                value={seekPercent}
+                value={Math.round(seekPercent)}
                 onChange={handleSeekChange}
                 aria-label="Video seek slider"
                 className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400 hover:accent-amber-300"
-                title="Drag to go to video middle or wherever you want"
+                title="Drag to scrub video position"
               />
-              <span className="text-[10px] font-mono font-semibold text-amber-400 w-8 text-right shrink-0">
-                {seekPercent}%
+              <span className="text-[10px] font-mono font-semibold text-amber-400 shrink-0 whitespace-nowrap">
+                {formatSecondsToTime(currentTime)} / {formatSecondsToTime(duration)}
               </span>
             </div>
 
